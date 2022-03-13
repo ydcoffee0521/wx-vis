@@ -280,7 +280,7 @@ def plotstreamline(ncdata,fig,ax):
 #parameter 0 = stream line
 #@st.cache(suppress_st_warning=True)
 def load_data(date, time, isstreamline, parameter):
-    ncf0 = Dataset('../data/uamwx_'+date+'_'+time+'.nc', mode = 'r', format = 'NETCDF4_CLASSIC')
+    ncf0 = Dataset('./data/uamwx_'+date+'_'+time+'.nc', mode = 'r', format = 'NETCDF4_CLASSIC')
     fig = plt.figure(figsize=(10,4.5))
     ax = plt.subplot(1, 1, 1, aspect=1)
     
