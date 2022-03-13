@@ -278,7 +278,7 @@ def plotstreamline(ncdata,fig,ax):
     contents = file_.read()
     data_url = base64.b64encode(contents).decode("utf-8")
     file_.close()
-    cols[0].markdown(f'<img src="data:image/gif;base64,{data_url}" alt="cat gif" style="display: block; margin: 0 auto;" width="700">',unsafe_allow_html=True)
+    cont.markdown(f'<img src="data:image/gif;base64,{data_url}" alt="cat gif" style="display: block; margin: 0 auto;" width="700">',unsafe_allow_html=True)
 #parameter 0 = stream line
 #@st.cache(suppress_st_warning=True)
 def load_data(date, time, isstreamline, parameter):
@@ -315,7 +315,7 @@ def load_data(date, time, isstreamline, parameter):
         contents = file_.read()
         data_url = base64.b64encode(contents).decode("utf-8")
         file_.close()
-        cols[0].markdown(f'<img src="data:image/gif;base64,{data_url}" alt="cat gif" style="display: block; margin: 0 auto;" width="700">',unsafe_allow_html=True)
+        cont.markdown(f'<img src="data:image/gif;base64,{data_url}" alt="cat gif" style="display: block; margin: 0 auto;" width="700">',unsafe_allow_html=True)
 
 date_info =str(today)[0:4]+str(today)[5:7]+str(today)[8:10]
 time_info = str(the_time)[0:2]+str(the_time)[3:5]+str(the_time)[6:8]
@@ -325,6 +325,7 @@ time_info = str(the_time)[0:2]+str(the_time)[3:5]+str(the_time)[6:8]
 status = st.radio("Streamline 활성화 여부", ("Active", "Inactive"))
 
 cols= st.columns([1,1,1,1,1,1,1,1,1,1])
+cont = st.container()
 with cols[0]:
     if st.button("기온"):
         load_data(date_info,time_info, status, "기온")
