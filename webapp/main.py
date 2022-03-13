@@ -25,6 +25,8 @@ import datetime
 today = st.date_input("날짜를 선택하세요.", datetime.date(2021, 10, 15))
 the_time = st.time_input("시간을 입력하세요.", datetime.time(6,30))
 
+import os
+path = os.path.dirname(__file__)
 
 class Streamlines(object):
     """
@@ -280,7 +282,7 @@ def plotstreamline(ncdata,fig,ax):
 #parameter 0 = stream line
 #@st.cache(suppress_st_warning=True)
 def load_data(date, time, isstreamline, parameter):
-    ncf0 = Dataset('./data/uamwx_'+date+'_'+time+'.nc', mode = 'r', format = 'NETCDF4_CLASSIC')
+    ncf0 = Dataset(path+'/data/uamwx_'+date+'_'+time+'.nc', mode = 'r', format = 'NETCDF4_CLASSIC')
     fig = plt.figure(figsize=(10,4.5))
     ax = plt.subplot(1, 1, 1, aspect=1)
     
