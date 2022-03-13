@@ -25,6 +25,10 @@ import datetime
 today = st.date_input("날짜를 선택하세요.", datetime.date(2021, 10, 15))
 the_time = st.time_input("시간을 입력하세요.", datetime.time(6,30))
 
+import os
+print(__file__)
+print(os.path.realpath(__file__))
+print(os.path.abspath(__file__))
 
 
 class Streamlines(object):
