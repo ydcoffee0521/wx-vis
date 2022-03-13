@@ -189,7 +189,7 @@ class Streamlines(object):
 def plotvar(ncdata,fig,ax,varname):
     Y= ncdata.variables['lat']
     X= ncdata.variables['lon']
-    temp = ncdata.variables[varname][5,:,:]
+    temp = ncdata.variables[varname][hgt_idx,:,:]
     unit = ncdata.variables[varname].units
     if (varname=="tke"):
         plt.contourf(X[0,:],Y[:,0],temp,alpha=0.7,locator = ticker.MaxNLocator(prune = 'lower'))
@@ -217,8 +217,8 @@ def plotvar2D(ncdata,fig,ax,varname):
 def plotstreamline(ncdata,fig,ax):
     Y = ncdata.variables['lat']
     X = ncdata.variables['lon']
-    U = ncdata.variables['u'][5,:,:]
-    V = ncdata.variables['v'][5,:,:]
+    U = ncdata.variables['u'][hgt_idx,:,:]
+    V = ncdata.variables['v'][hgt_idx,:,:]
     #U, V = -1 - X**2 + Y, 1 + X - X*Y**2
     speed = np.sqrt(U*U + V*V)
 
@@ -323,7 +323,8 @@ time_info = str(the_time)[0:2]+str(the_time)[3:5]+str(the_time)[6:8]
  
 ## Radio button
 status = st.radio("Streamline 활성화 여부", ("Active", "Inactive"))
-
+height = st.slider("고도를 선택하세요",0.0,3116.798,164.042,164.042)
+hgt_idx = height//164.042
 cols= st.columns([1,1,1,1,1,1,1,1,1,1])
 cont = st.container()
 with cols[0]:
