@@ -23,7 +23,7 @@ import base64
 ## Date Input
 import datetime
 today = st.date_input("날짜를 선택하세요.", datetime.date(2021, 10, 15))
-the_time = st.time_input("시간을 입력하세요.", datetime.time())
+the_time = st.time_input("시간을 입력하세요.", datetime.time(6,30))
 
 
 
