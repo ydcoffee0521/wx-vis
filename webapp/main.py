@@ -1,12 +1,9 @@
 import streamlit as st
 #st.set_page_config(layout="wide")   
 ## Title
-st.title('UAM 기상 정보 가시화')
-## Header/Subheader
-#st.header('This is header')
-#st.subheader('This is subheader')
-## Text
-st.text("가시화 테스트")
+import os
+path = os.path.dirname(__file__)
+st.image(path+'/배너.png')
 
 import tqdm
 import numpy as np
@@ -28,8 +25,7 @@ the_time = st.time_input("시간을 입력하세요.", datetime.time(6,30))
 
 import cv2
 
-import os
-path = os.path.dirname(__file__)
+
 
 class Streamlines(object):
     """
