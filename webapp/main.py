@@ -417,13 +417,13 @@ with cols2[0]:
     lat1 = st.number_input("시작 위도", 37.4712,37.6049,format="%f")  
 
 with cols2[2]:
-    lon1 = st.number_input("시작 경도", 126.774,127.112,format="%f")
+    lon1 = st.number_input("시작 경도", 126.80,127.10,format="%f")
 
 with cols3[0]:
     lat2 = st.number_input("도착 위도", 37.4712,37.6049,format="%f")  
 
 with cols3[2]:
-    lon2 = st.number_input("도착 경도", 126.774,127.112,format="%f")
+    lon2 = st.number_input("도착 경도", 126.80,127.10,format="%f")
 
 with cols[0]:
     if st.button("기온"):
