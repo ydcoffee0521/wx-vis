@@ -285,7 +285,7 @@ def plotstreamline(ncdata,fig,ax):
     ax.set_ylim(Y[0,0],Y[-2,-2])
     #ax.set_yticks([])
     plt.tight_layout()
-
+    plt.grid(True, color='black', alpha=0.8, linestyle='--')
     cx.add_basemap(ax, crs=4004,source=cx.providers.CartoDB.Positron) #crs='WGS84',
         
     def update(frame_no):
@@ -342,13 +342,14 @@ def load_data(date, time, isstreamline, parameter):
     lonlist = [lon1, lon2]
     latlist = [lat1, lat2]
     image_path = get_sample_data(path+'/plane.png')
-    imscatter(lonlist, latlist, image_path, zoom=0.05, ax=ax)
+    imscatter(lonlist, latlist, image_path, zoom=0.02, ax=ax)
     ax.plot(lonlist, latlist)
     if (isstreamline=="Active"):
         plotstreamline(ncf0,fig,ax)
     else:
         cx.add_basemap(ax, crs=4004,source=cx.providers.CartoDB.Positron) #crs='WGS84',
         plt.tight_layout()
+        plt.grid(True, color='black', alpha=0.8, linestyle='--')
         plt.savefig('savefig_default.png')
         file_ = open("./savefig_default.png", "rb")
         contents = file_.read()
@@ -388,7 +389,7 @@ def imscatter(x, y, image, ax=None, zoom=1):
     except TypeError:
         # Likely already an array...
         pass
-    angle = np.arctan2(lon2-lon1,lat2-lat1)*(180/np.pi)
+    angle = 45+np.arctan2(lon2-lon1,lat2-lat1)*(180/np.pi)
     rotated = rotate_bound(image, angle)
     im = OffsetImage(rotated, cmap=plt.cm.gray_r, zoom=zoom)
     x, y = np.atleast_1d(x, y)
