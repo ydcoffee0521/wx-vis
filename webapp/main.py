@@ -134,8 +134,8 @@ class Streamlines(object):
         Compute a streamline extending in both directions from the given point.
         """
 
-        sx, sy = self._makeHalfStreamline(x0, y0, 1) # forwards
-        rx, ry = self._makeHalfStreamline(x0, y0, -1) # backwards
+        sx, sy = self._makeHalfStreamline(x0, y0, -1) # forwards
+        rx, ry = self._makeHalfStreamline(x0, y0, 1) # backwards
 
         rx.reverse()
         ry.reverse()
@@ -208,9 +208,11 @@ def plotwind(ncdata,fig,ax,sord):
     temp2 = ncdata.variables['v'][hgt_idx,:,:]
     temp3 = ncdata.variables['v'][hgt_idx,:,:]
     unit = ncdata.variables['u'].units
+    filtu = np.where(np.isnan(temp1),0,temp1)
+    filtv = np.where(np.isnan(temp2),0,temp2)
     windspd = np.sqrt(temp1**2+temp2**2+temp3**2)
     if (sord=="0"):
-        plt.contourf(X[0,:],Y[:,0],temp1,temp2)
+        plt.quiver(X[0,2:-3:3],Y[2:-3:3,0],filtu[2:-3:3,2:-3:3],filtv[2:-3:3,2:-3:3],windspd[2:-3:3,2:-3:3])
         c = plt.colorbar(shrink=0.7)
         c.set_label(unit)
     else:
