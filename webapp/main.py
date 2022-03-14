@@ -19,11 +19,14 @@ import contextily as cx
 import mpld3
 from PIL import Image
 import base64
-
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from matplotlib.cbook import get_sample_data
 ## Date Input
 import datetime
 today = st.date_input("날짜를 선택하세요.", datetime.date(2021, 10, 15))
 the_time = st.time_input("시간을 입력하세요.", datetime.time(6,30))
+
+import cv2
 
 import os
 path = os.path.dirname(__file__)
@@ -199,6 +202,9 @@ def plotvar(ncdata,fig,ax,varname):
         plt.contourf(X[0,:],Y[:,0],temp,alpha=0.7)
         c = plt.colorbar(shrink=0.7)
         c.set_label(unit)
+    ax.set_xlim(X[0,0],X[-1,-1])
+    #ax.set_xticks([])
+    ax.set_ylim(Y[0,0],Y[-2,-2])
 
 def plotwind(ncdata,fig,ax,sord):
     #sord =1, windspeed sord = 0, winddir
@@ -219,6 +225,9 @@ def plotwind(ncdata,fig,ax,sord):
         plt.contourf(X[0,:],Y[:,0],windspd,alpha=0.7)
         c = plt.colorbar(shrink=0.7)
         c.set_label(unit)
+    ax.set_xlim(X[0,0],X[-1,-1])
+    #ax.set_xticks([])
+    ax.set_ylim(Y[0,0],Y[-2,-2])
 
 def plotvar2D(ncdata,fig,ax,varname):
     Y= ncdata.variables['lat']
@@ -233,7 +242,9 @@ def plotvar2D(ncdata,fig,ax,varname):
         plt.contourf(X[0,:],Y[:,0],temp,alpha=0.7)
         c = plt.colorbar(shrink=0.7)
         c.set_label(unit)
-            
+    ax.set_xlim(X[0,0],X[-1,-1])
+    #ax.set_xticks([])
+    ax.set_ylim(Y[0,0],Y[-2,-2])
 def plotstreamline(ncdata,fig,ax):
     Y = ncdata.variables['lat']
     X = ncdata.variables['lon']
@@ -271,7 +282,7 @@ def plotstreamline(ncdata,fig,ax):
 
     ax.set_xlim(X[0,0],X[-1,-1])
     #ax.set_xticks([])
-    ax.set_ylim(Y[0,0],Y[-1,-1])
+    ax.set_ylim(Y[0,0],Y[-2,-2])
     #ax.set_yticks([])
     plt.tight_layout()
 
@@ -292,7 +303,6 @@ def plotstreamline(ncdata,fig,ax):
     # animation.save('wind.mp4', writer='ffmpeg', fps=60)
     animation.save('wind.gif', writer='imagemagick', fps=60)
     pbar.close()
-    #plt.show()
 
     file_ = open("./wind.gif", "rb")
     contents = file_.read()
@@ -328,7 +338,12 @@ def load_data(date, time, isstreamline, parameter):
         plotwind(ncf0,fig,ax,"1")    
     else:
         st.warning("오류입니당.")
-     
+    
+    lonlist = [lon1, lon2]
+    latlist = [lat1, lat2]
+    image_path = get_sample_data(path+'/plane.png')
+    imscatter(lonlist, latlist, image_path, zoom=0.05, ax=ax)
+    ax.plot(lonlist, latlist)
     if (isstreamline=="Active"):
         plotstreamline(ncf0,fig,ax)
     else:
@@ -341,16 +356,75 @@ def load_data(date, time, isstreamline, parameter):
         file_.close()
         cont.markdown(f'<img src="data:image/gif;base64,{data_url}" alt="cat gif" style="display: block; margin: 0 auto;" width="700">',unsafe_allow_html=True)
 
+def rotate_bound(image, angle):
+    # grab the dimensions of the image and then determine the
+    # center
+    (h, w) = image.shape[:2]
+    (cX, cY) = (w // 2, h // 2)
+
+    # grab the rotation matrix (applying the negative of the
+    # angle to rotate clockwise), then grab the sine and cosine
+    # (i.e., the rotation components of the matrix)
+    M = cv2.getRotationMatrix2D((cX, cY), -angle, 1.0)
+    cos = np.abs(M[0, 0])
+    sin = np.abs(M[0, 1])
+
+    # compute the new bounding dimensions of the image
+    nW = int((h * sin) + (w * cos))
+    nH = int((h * cos) + (w * sin))
+
+    # adjust the rotation matrix to take into account translation
+    M[0, 2] += (nW / 2) - cX
+    M[1, 2] += (nH / 2) - cY
+
+    # perform the actual rotation and return the image
+    return cv2.warpAffine(image, M, (nW, nH), borderValue=(255,255,255))
+
+def imscatter(x, y, image, ax=None, zoom=1):
+    if ax is None:
+        ax = plt.gca()
+    try:
+        image = plt.imread(image)
+    except TypeError:
+        # Likely already an array...
+        pass
+    angle = np.arctan2(lon2-lon1,lat2-lat1)*(180/np.pi)
+    rotated = rotate_bound(image, angle)
+    im = OffsetImage(rotated, cmap=plt.cm.gray_r, zoom=zoom)
+    x, y = np.atleast_1d(x, y)
+    artists = []
+    for x0, y0 in zip(x, y):
+        ab = AnnotationBbox(im, (x0, y0), xycoords='data', frameon=False)
+        artists.append(ax.add_artist(ab))
+    #ax.update_datalim(np.column_stack([x, y]))
+    #ax.autoscale()
+    return artists
+
 date_info =str(today)[0:4]+str(today)[5:7]+str(today)[8:10]
 time_info = str(the_time)[0:2]+str(the_time)[3:5]+str(the_time)[6:8]
 
  
 ## Radio button
 status = st.radio("Streamline 활성화 여부", ("Active", "Inactive"))
-height = st.slider("고도를 선택하세요",0.0,3116.798,164.042,164.042)
-hgt_idx = height//164.042
+height = st.slider("고도를 선택하세요 (단위 : ft)",0,2000,100,100)
+hgt_idx = height//100
 cols= st.columns([1,1,1,1,1,1,1,1,1,1])
+cols2 = st.columns([2,1,2,1])
+cols3 = st.columns([2,1,2,1])
 cont = st.container()
+
+with cols2[0]:
+    lat1 = st.number_input("시작 위도")  
+
+with cols2[2]:
+    lon1 = st.number_input("시작 경도")
+
+with cols3[0]:
+    lat2 = st.number_input("도착 위도")  
+
+with cols3[2]:
+    lon2 = st.number_input("도착 경도")
+
 with cols[0]:
     if st.button("기온"):
         load_data(date_info,time_info, status, "기온")
