@@ -414,16 +414,16 @@ cols3 = st.columns([2,1,2,1])
 cont = st.container()
 
 with cols2[0]:
-    lat1 = st.number_input("시작 위도")  
+    lat1 = st.number_input("시작 위도", 37.4712,37.6049,format="%f")  
 
 with cols2[2]:
-    lon1 = st.number_input("시작 경도")
+    lon1 = st.number_input("시작 경도", 126.774,127.112,format="%f")
 
 with cols3[0]:
-    lat2 = st.number_input("도착 위도")  
+    lat2 = st.number_input("도착 위도", 37.4712,37.6049,format="%f")  
 
 with cols3[2]:
-    lon2 = st.number_input("도착 경도")
+    lon2 = st.number_input("도착 경도", 126.774,127.112,format="%f")
 
 with cols[0]:
     if st.button("기온"):
