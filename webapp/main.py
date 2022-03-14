@@ -200,6 +200,24 @@ def plotvar(ncdata,fig,ax,varname):
         c = plt.colorbar(shrink=0.7)
         c.set_label(unit)
 
+def plotwind(ncdata,fig,ax,sord):
+    #sord =1, windspeed sord = 0, winddir
+    Y= ncdata.variables['lat']
+    X= ncdata.variables['lon']
+    temp1 = ncdata.variables['u'][hgt_idx,:,:]
+    temp2 = ncdata.variables['v'][hgt_idx,:,:]
+    temp3 = ncdata.variables['v'][hgt_idx,:,:]
+    unit = ncdata.variables['u'].units
+    windspd = np.sqrt(temp1**2+temp2**2+temp3**2)
+    if (sord=="0"):
+        plt.contourf(X[0,:],Y[:,0],temp1,temp2)
+        c = plt.colorbar(shrink=0.7)
+        c.set_label(unit)
+    else:
+        plt.contourf(X[0,:],Y[:,0],windspd,alpha=0.7)
+        c = plt.colorbar(shrink=0.7)
+        c.set_label(unit)
+
 def plotvar2D(ncdata,fig,ax,varname):
     Y= ncdata.variables['lat']
     X= ncdata.variables['lon']
@@ -302,6 +320,10 @@ def load_data(date, time, isstreamline, parameter):
         plotvar2D(ncf0,fig,ax,"pcp")
     elif (parameter=="W"):
         plotvar(ncf0,fig,ax,"w")
+    elif (parameter=="풍향"):
+        plotwind(ncf0,fig,ax,"0")
+    elif (parameter=="풍속"):
+        plotwind(ncf0,fig,ax,"1")    
     else:
         st.warning("오류입니당.")
      
@@ -332,10 +354,10 @@ with cols[0]:
         load_data(date_info,time_info, status, "기온")
 with cols[1]:
     if st.button("풍속"):
-        st.warning("준비되지않음")
+        load_data(date_info,time_info, status, "풍속")
 with cols[2]:
     if st.button("풍향"):
-        st.warning("준비되지않음")
+        load_data(date_info,time_info, status, "풍향")
 with cols[3]:
     if st.button("습도"):
         load_data(date_info,time_info, status, "습도")
