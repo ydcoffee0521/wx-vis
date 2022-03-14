@@ -6,4 +6,4 @@ contextily==1.2.0
 mpld3==0.5.7
 Pillow==7.0.0
 streamlit==1.7.0
-opencv-python==4.5.5
+opencv-python==4.5.5.64
