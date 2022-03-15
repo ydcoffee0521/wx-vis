@@ -441,10 +441,10 @@ with cols[5]:
     if st.button("운고"):
         load_data(date_info,time_info, status, "운고")
 with cols[6]:
-    if st.button("tke"):
+    if st.button("TKE"):
         load_data(date_info,time_info, status, "tke")
 with cols[7]:
-    if st.button("edr"):
+    if st.button("EDR"):
         load_data(date_info,time_info, status, "edr")
 with cols[8]:
     if st.button("강수"):
