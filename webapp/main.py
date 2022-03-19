@@ -1,3 +1,4 @@
+import jinja2
 import streamlit as st
 #st.set_page_config(layout="wide")   
 ## Title
@@ -13,17 +14,20 @@ from matplotlib.collections import LineCollection
 import matplotlib.ticker as ticker
 from netCDF4 import Dataset
 import contextily as cx
+from wrf import ll_to_xy
 import mpld3
 from PIL import Image
 import base64
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from matplotlib.cbook import get_sample_data
+import scipy.ndimage
 ## Date Input
 import datetime
 today = st.date_input("날짜를 선택하세요.", datetime.date(2021, 10, 15))
 the_time = st.time_input("시간을 입력하세요.", datetime.time(6,30))
 
 import cv2
+import plotly.express as px
 
 
 
@@ -190,17 +194,56 @@ def plotvar(ncdata,fig,ax,varname):
     X= ncdata.variables['lon']
     temp = ncdata.variables[varname][hgt_idx,:,:]
     unit = ncdata.variables[varname].units
+    tempmin = np.nanmin(temp)
+    tempmax = np.nanmax(temp)
+    temp = np.where(np.isnan(temp),-500,temp)
+    cmap = plt.get_cmap('jet').copy()
+    cmap.set_under(alpha=0.4)
     if (varname=="tke"):
-        plt.contourf(X[0,:],Y[:,0],temp,alpha=0.7,locator = ticker.MaxNLocator(prune = 'lower'))
-        c = plt.colorbar(shrink=0.7)
+        plt.contourf(X[0,:],Y[:,0],temp,100,alpha=0.4,levels=np.arange(tempmin,tempmax,(tempmax-tempmin)/10),cmap=cmap,zorder=2,vmin=tempmin,vmax=tempmax,extend="both")
+        c = plt.colorbar(shrink=0.9,ticks=np.arange(tempmin,tempmax,(tempmax-tempmin)/10),location="top",aspect=30)
         c.set_label(unit)
+        #plt.contourf(X[0,:],Y[:,0],temp2,100,alpha=0.7,cmap=cmap,zorder=1)  
     else:
-        plt.contourf(X[0,:],Y[:,0],temp,alpha=0.7)
-        c = plt.colorbar(shrink=0.7)
+        plt.contourf(X[0,:],Y[:,0],temp,100,alpha=0.3,levels=np.arange(tempmin,tempmax,(tempmax-tempmin)/10),cmap=cmap,zorder=2,vmin=tempmin,vmax=tempmax,extend="both")
+        c = plt.colorbar(shrink=0.9,ticks=np.arange(tempmin,tempmax,(tempmax-tempmin)/10),location="top",aspect=30)
         c.set_label(unit)
+        #plt.contourf(X[0,:],Y[:,0],temp2,100,alpha=0.7,cmap=cmap,zorder=1)
+        
     ax.set_xlim(X[0,0],X[-1,-1])
     #ax.set_xticks([])
     ax.set_ylim(Y[0,0],Y[-2,-2])
+def find_nearest(a, val):
+    idx = np.argmin(np.abs(a - val))
+    return (idx / a.shape[1], idx % a.shape[1])
+
+pointnum = 100
+
+def linevar(ncdata,fig,ax,varname):
+    if (lon1==lon2):
+        lonli = np.ones((pointnum))*lon1
+    else:
+        lonli = np.arange(lon1, lon2, (lon2-lon1)/pointnum)
+    if (lat1==lat2):
+        latli = np.ones((pointnum))*lat1
+    else:
+        latli = np.arange(lat1, lat2, (lat2-lat1)/pointnum)
+    lonlat = []
+    temp = ncdata.variables[varname][hgt_idx,:,:]
+    waytemp = np.zeros((pointnum,),float)
+    Y= ncdata.variables['lat']
+    X= ncdata.variables['lon']
+    for kk in range(pointnum):
+        lonlat.append(str(round(latli[kk],4))+', '+str(round(lonli[kk],4)))
+        j_idx = int(find_nearest(Y,latli[kk])[0])
+        i_idx = int(find_nearest(X,lonli[kk])[1])
+        waytemp[kk] = temp[j_idx,i_idx]
+    fff = px.line(x=lonlat, y = scipy.ndimage.gaussian_filter(waytemp,2))
+    #fff = px.line(x=lonlat, y = waytemp)
+    fff.update_xaxes(showticklabels=False, title_text="position")
+    fff.update_yaxes(title_text=varname)
+    cont2.plotly_chart(fff, use_container_width=True)
+    
 
 def plotwind(ncdata,fig,ax,sord):
     #sord =1, windspeed sord = 0, winddir
@@ -213,14 +256,45 @@ def plotwind(ncdata,fig,ax,sord):
     filtu = np.where(np.isnan(temp1),0,temp1)
     filtv = np.where(np.isnan(temp2),0,temp2)
     windspd = np.sqrt(temp1**2+temp2**2+temp3**2)
+    tempmin = np.nanmin(windspd)
+    tempmax = np.nanmax(windspd)
+    windspd = np.where(np.isnan(windspd),-500,windspd)
+    cmap = plt.get_cmap('jet').copy()
+    cmap.set_under(alpha=0.4)
+    
+    
     if (sord=="0"):
         plt.quiver(X[0,2:-3:3],Y[2:-3:3,0],filtu[2:-3:3,2:-3:3],filtv[2:-3:3,2:-3:3],windspd[2:-3:3,2:-3:3])
         c = plt.colorbar(shrink=0.7)
         c.set_label(unit)
+        
     else:
-        plt.contourf(X[0,:],Y[:,0],windspd,alpha=0.7)
-        c = plt.colorbar(shrink=0.7)
+        plt.contourf(X[0,:],Y[:,0],windspd,100,alpha=0.4,levels=np.arange(tempmin,tempmax,(tempmax-tempmin)/10),cmap=cmap,zorder=2,vmin=tempmin,vmax=tempmax,extend="both")
+        c = plt.colorbar(shrink=0.7,ticks=np.arange(tempmin,tempmax,(tempmax-tempmin)/10))
         c.set_label(unit)
+        if (lon1==lon2):
+            lonli = np.ones((pointnum))*lon1
+        else:
+            lonli = np.arange(lon1, lon2, (lon2-lon1)/pointnum)
+        if (lat1==lat2):
+            latli = np.ones((pointnum))*lat1
+        else:
+            latli = np.arange(lat1, lat2, (lat2-lat1)/pointnum)
+        lonlat = []
+        temp = windspd
+        waytemp = np.zeros((pointnum,),float)
+        Y= ncdata.variables['lat']
+        X= ncdata.variables['lon']
+        for kk in range(pointnum):
+            lonlat.append(str(round(latli[kk],4))+', '+str(round(lonli[kk],4)))
+            j_idx = int(find_nearest(Y,latli[kk])[0])
+            i_idx = int(find_nearest(X,lonli[kk])[1])
+            waytemp[kk] = temp[j_idx,i_idx]
+        fff = px.line(x=lonlat, y = scipy.ndimage.gaussian_filter(waytemp,2))
+        #fff = px.line(x=lonlat, y = waytemp)
+        fff.update_xaxes(showticklabels=False, title_text="position")
+        fff.update_yaxes(title_text="wind speed")
+        cont2.plotly_chart(fff, use_container_width=True)
     ax.set_xlim(X[0,0],X[-1,-1])
     #ax.set_xticks([])
     ax.set_ylim(Y[0,0],Y[-2,-2])
@@ -230,6 +304,26 @@ def plotvar2D(ncdata,fig,ax,varname):
     X= ncdata.variables['lon']
     temp = ncdata.variables[varname][:,:]
     unit = ncdata.variables[varname].units
+    if (lon1==lon2):
+        lonli = np.ones((pointnum))*lon1
+    else:
+        lonli = np.arange(lon1, lon2, (lon2-lon1)/pointnum)
+    if (lat1==lat2):
+        latli = np.ones((pointnum))*lat1
+    else:
+        latli = np.arange(lat1, lat2, (lat2-lat1)/pointnum)
+    lonlat = []
+    waytemp = np.zeros((pointnum,),float)
+    for kk in range(pointnum):
+        lonlat.append(str(round(latli[kk],4))+', '+str(round(lonli[kk],4)))
+        j_idx = int(find_nearest(Y,latli[kk])[0])
+        i_idx = int(find_nearest(X,lonli[kk])[1])
+        waytemp[kk] = temp[j_idx,i_idx]
+    fff = px.line(x=lonlat, y = scipy.ndimage.gaussian_filter(waytemp,2))
+    #fff = px.line(x=lonlat, y = waytemp)
+    fff.update_xaxes(showticklabels=False, title_text="position")
+    fff.update_yaxes(title_text=varname)
+    cont2.plotly_chart(fff, use_container_width=True)
     if (varname=="tke"):
         plt.contourf(X[0,:],Y[:,0],temp,alpha=0.7,locator = ticker.MaxNLocator(prune = 'lower'))
         c = plt.colorbar(shrink=0.7)
@@ -241,6 +335,7 @@ def plotvar2D(ncdata,fig,ax,varname):
     ax.set_xlim(X[0,0],X[-1,-1])
     #ax.set_xticks([])
     ax.set_ylim(Y[0,0],Y[-2,-2])
+
 def plotstreamline(ncdata,fig,ax):
     Y = ncdata.variables['lat']
     X = ncdata.variables['lon']
@@ -281,8 +376,10 @@ def plotstreamline(ncdata,fig,ax):
     ax.set_ylim(Y[0,0],Y[-2,-2])
     #ax.set_yticks([])
     plt.tight_layout()
+    bimg = plt.imread(path+"/baseimagecut.png")
+    ax.imshow(bimg, extent=[126.77536010742188, 127.11080932617188,37.47121810913086,37.604862213134766])
     plt.grid(True, color='black', alpha=0.8, linestyle='--')
-    cx.add_basemap(ax, crs=4004,source=cx.providers.CartoDB.Positron) #crs='WGS84',
+    #cx.add_basemap(ax, crs=4004,source=cx.providers.Stamen.TonerLite) #crs='WGS84',
         
     def update(frame_no):
         for i in range(len(lines)):
@@ -314,20 +411,26 @@ def load_data(date, time, isstreamline, parameter):
     
     if (parameter=="기온"):
         plotvar(ncf0,fig,ax,"temp")
+        linevar(ncf0,fig,ax,"temp")
     elif (parameter=="습도"):
         plotvar(ncf0,fig,ax,"rh")
+        linevar(ncf0,fig,ax,"rh")
     elif (parameter=="시정"):
         plotvar(ncf0,fig,ax,"vis")
+        linevar(ncf0,fig,ax,"vis")
     elif (parameter=="운고"):
         plotvar2D(ncf0,fig,ax,"lcl")
     elif (parameter=="tke"):
         plotvar(ncf0,fig,ax,"tke")
+        linevar(ncf0,fig,ax,"tke")
     elif (parameter=="edr"):
         plotvar(ncf0,fig,ax,"edr")
+        linevar(ncf0,fig,ax,"edr")
     elif (parameter=="강수"):
         plotvar2D(ncf0,fig,ax,"pcp")
     elif (parameter=="W"):
         plotvar(ncf0,fig,ax,"w")
+        linevar(ncf0,fig,ax,"w")
     elif (parameter=="풍향"):
         plotwind(ncf0,fig,ax,"0")
     elif (parameter=="풍속"):
@@ -338,20 +441,19 @@ def load_data(date, time, isstreamline, parameter):
     lonlist = [lon1, lon2]
     latlist = [lat1, lat2]
     image_path = get_sample_data(path+'/plane.png')
-    imscatter(lonlist, latlist, image_path, zoom=0.02, ax=ax)
+    imscatter(lonlist, latlist, image_path, zoom=0.01, ax=ax)
     ax.plot(lonlist, latlist)
     if (isstreamline=="Active"):
         plotstreamline(ncf0,fig,ax)
     else:
-        cx.add_basemap(ax, crs=4004,source=cx.providers.CartoDB.Positron) #crs='WGS84',
+        
+        #cx.add_basemap(ax, crs=4004,source=cx.providers.Stamen.TonerLite) #crs='WGS84',CartoDB.Positron
         plt.tight_layout()
+        bimg = plt.imread(path+"/baseimagecut.png")
+        ax.imshow(bimg, extent=[126.77536010742188, 127.11080932617188,37.47121810913086,37.604862213134766])
         plt.grid(True, color='black', alpha=0.8, linestyle='--')
-        plt.savefig('savefig_default.png')
-        file_ = open("./savefig_default.png", "rb")
-        contents = file_.read()
-        data_url = base64.b64encode(contents).decode("utf-8")
-        file_.close()
-        cont.markdown(f'<img src="data:image/gif;base64,{data_url}" alt="cat gif" style="display: block; margin: 0 auto;" width="700">',unsafe_allow_html=True)
+        cont.pyplot(fig)
+
 
 def rotate_bound(image, angle):
     # grab the dimensions of the image and then determine the
@@ -403,12 +505,14 @@ time_info = str(the_time)[0:2]+str(the_time)[3:5]+str(the_time)[6:8]
  
 ## Radio button
 status = st.radio("Streamline 활성화 여부", ("Active", "Inactive"))
-height = st.slider("고도를 선택하세요 (단위 : ft)",0,2000,100,100)
+height = st.slider("고도를 선택하세요 (단위 : ft)",200,2000,200,100)
 hgt_idx = height//100
-cols= st.columns([1,1,1,1,1,1,1,1,1,1])
+cols= st.columns(10)
+colspls = st.columns(10)
 cols2 = st.columns([2,1,2,1])
 cols3 = st.columns([2,1,2,1])
 cont = st.container()
+cont2 = st.container()
 
 with cols2[0]:
     lat1 = st.number_input("시작 위도", 37.4712,37.6049,format="%f")  
@@ -452,6 +556,7 @@ with cols[8]:
 with cols[9]:
     if st.button("W"):
         load_data(date_info,time_info, status, "W")
+
 ## Select Box
 #container = st.container()
 
